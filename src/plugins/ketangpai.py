@@ -19,12 +19,14 @@ headersLogin = {
     "reqtimestamp": "'.time().'"
 }
 
+
 def Login(token):
     result = requests.post(urlLogin, headersLogin)
     userData = result.json()
     # print(userData['status'])
     if userData['status'] == 1:
         return userData['data']
+
 
 url2 = "https://openapiv51.ketangpai.com//FutureV2/CourseMeans/getCourseContent"
 
@@ -34,7 +36,7 @@ zuoye = on_command("作业")
 @zuoye.handle()
 async def GetCourseContent(bot: Bot, event: Event, state: dict):
     contexts = Login(token)
-    str = ""
+    str = "[2] 「快去写作业啊喂!」\n"
     for context in contexts:
         id = context['id']
         headers2 = {
