@@ -15,10 +15,12 @@ headersLogin = {
     "isstudy": "1",
     "search": "",
     "semester": "2021-2022",
-    "term": "1",
+    "term": "2",
     "reqtimestamp": "'.time().'"
 }
 
+
+#  "mstatus": 0:未提交 1:已提交 2:已批改阅分 3:已批改
 
 def Login(token):
     result = requests.post(urlLogin, headersLogin)
@@ -60,20 +62,14 @@ async def GetCourseContent(bot: Bot, event: Event, state: dict):
         i = 0
         if contextInfoM['data']['list'] != []:
             # print(context['coursename'])
-            if (context['coursename'] == "21-22远程辅导"):
-                continue
             for contextWork in contextInfoM['data']['list']:
                 i = i + 1
                 res = int(contextWork['endtime'])
                 if contextWork['mstatus'] == 0:
                     if i == 1:
                         str = str + "[-- " + context['coursename'] + " --]" + "\n"
-                    endTime = time.strftime("%Y--%m--%d %H:%M:%S", time.localtime(res))
+                    endTime = time.strftime("%m-%d %H:%M:%S", time.localtime(res))
                     str = str + "[ " + contextWork['title'] + " ] End Time: " + endTime
-
-                    if res < time.time():
-                        str = str + "!!!该作业超时未交!!!"
-                    str = str + "\n"
 
     await bot.send(
         event=event,

@@ -1,123 +1,59 @@
-from nonebot import on_command, on_message
+from nonebot import on_command, on_message, on_regex
 from nonebot.rule import to_me
 from nonebot.adapters.cqhttp import Bot, Event
 import time
 import nonebot
 import requests, json
+import os
+from ContestsSpider import atcoderSpider, codeforcesSpider
+from ContestsSpider import nowcoderSpider
 
 from nonebot import require
 
-LEETCODE_URL = "https://leetcode-cn.com/problemset/all/"
-base_url = 'https://leetcode-cn.com'
-
-a = ""
+contestUrl = []
+data = ""
 
 
-def GetCodeforces():
-    url = requests.get("https://codeforces.com/api/contest.list?gym=false")
-    text = url.text
-    contestsData = json.loads(text)
-    strr = "[ codeforces ]\n"
-    if (contestsData['status'] == 'OK'):
-        contests = contestsData['result']
-        res = contests[0]
-        if (res['relativeTimeSeconds'] > 0):
-            strr = strr + "No contests recently ." + "\n"
-            return strr
-        for contest in contests:
-            if (contest['relativeTimeSeconds'] < 0):
-                res = contest
-            else:
-                strr = strr + res['name'] + " " + time.strftime("%Y-%m-%d %H:%M:%S",
-                                                                time.localtime(res['startTimeSeconds'])) + "\n"
-                return strr
-    else:
-        strr = strr + 'Codeforces API is abnormal .' + "\n"
-        return strr
+def GetContests():
+    atcoderContest = atcoderSpider.getContestsList()[0]
+    codeforcsContest = codeforcesSpider.getContestsList()[0]
+    nowcoderContests = nowcoderSpider.getContestsList()
+    index = 0
+    contestInform = ""
+    if 'name' in atcoderContest:
+        contestInform += '「' + str(index) + '」 ' + atcoderContest['name'] + '\n' + atcoderContest['time'] + '\n'
+        contestUrl.append(atcoderContest['url'])
+        index += 1
+
+    if 'name' in codeforcsContest:
+        contestInform += '「' + str(index) + '」 ' + codeforcsContest['name'] + '\n' + codeforcsContest['time'] + '\n'
+        contestUrl.append(codeforcsContest['url'])
+        index += 1
+
+    for nowcoderContest in nowcoderContests:
+        contestInform += '「' + str(index) + '」 ' + nowcoderContest[0]['name'] + '\n' + nowcoderContest[0]['time'] + '\n'
+        contestUrl.append(nowcoderContest[0]['url'])
+        index += 1
+
+    with open(os.getcwd() + "/src/plugins/ContestsSpider/contestInforms.txt", encoding='utf-8', mode='w+') as f_obj:
+        f_obj.write(contestInform)
+    f_obj.close()
+
+    return contestInform
 
 
-def GetContestsInfo():
-    returnStr = ""
-    headersLogin = {
-        "Request Method": "POST",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36",
-    }
-    url = "https://ac.nowcoder.com/acm/calendar/contest?token=&month=2021-12&_="
-    res = requests.get(url, headersLogin)
-    res = json.loads(res.text)
-    codeforces = {}
-    NowCoder = {}
-    AtCoder = {}
-    UOJ = {}
-    contests = res['data']
-    for contest in contests:
-        endTime = int(contest['endTime'])
-        startTime = int(contest['startTime'])
-        if endTime / 1000 < int(time.time()) or startTime / 1000 > int(time.time()) + 604800:
-            continue
-        name = contest['contestName'].strip()
-        # if contest['ojName'] == "CodeForces" and len(codeforces) < 2:
-        #     codeforces[name] = startTime
-        if contest['ojName'] == "NowCoder" and len(NowCoder) < 2:
-            NowCoder[name] = startTime
-        if contest['ojName'] == "AtCoder" and len(AtCoder) < 2:
-            AtCoder[name] = startTime
-        if contest['ojName'] == "UOJ" and len(UOJ) < 2:
-            UOJ[name] = startTime
-    # returnStr += "[ codeforces ]\n"
-    # print('[ codeforces ]')
-    # for i in codeforces:
-    #     res = int(codeforces[i])
-    #     endTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(res / 1000))
-    #     returnStr += i + " " + endTime + "\n"
-    # print(i + " " + endTime)
-    returnStr += "[ NowCoder ]\n"
-    # print('[ NowCoder ]')
-    for i in NowCoder:
-        res = int(NowCoder[i])
-        endTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(res / 1000))
-        returnStr += i + " " + endTime + "\n"
-        # print(i + " " + endTime)
-
-    returnStr += "[ AtCoder ]\n"
-    # print('[ AtCoder ]')
-    for i in AtCoder:
-        res = int(AtCoder[i])
-        endTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(res / 1000))
-        returnStr += i + " " + endTime + "\n"
-        # print(i + " " + endTime)
-
-    returnStr += "[ UOJ ]\n"
-    # print('[ UOJ ]')
-    for i in UOJ:
-        res = int(UOJ[i])
-        endTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(res / 1000))
-        returnStr += i + " " + endTime + "\n"
-        # print(i + " " + endTime)
-    return returnStr
+scheduler = require('nonebot_plugin_apscheduler').scheduler
 
 
-contestInfo = []
-updataTime = []
-updata = on_message()
-
-
-@updata.handle()
-async def updataContest(bot: Bot, event: Event, state: dict):
-    a = time.localtime()
-    if a.tm_hour == 19:
-        await bot.send_msg(
-            message_type="group",
-            group_id=int(1124693419),
-            message='开始更新'
-        )
-        updataTime.append(str(a.tm_year) + "/" + str(a.tm_mon) + "/" + str(a.tm_mday))
-        contestInfo.append(GetCodeforces() + GetContestsInfo())
-        await bot.send_msg(
-            message_type="group",
-            group_id=int(1124693419),
-            message='更新成功' + updataTime[0]
-        )
+@scheduler.scheduled_job('cron', hour='01', minute='10', id='UpdateContest')
+async def UpdateContest():
+    (bot,) = nonebot.get_bots().values()
+    GetContests()
+    await bot.send_msg(
+        message_type="group",
+        group_id=int(1124693419),
+        message='三点几嚟，做碌鸠啊做！做这么多，老板不会心疼你的,饮茶先啦！'
+    )
 
 
 zuoye = on_command("最近比赛")
@@ -125,8 +61,38 @@ zuoye = on_command("最近比赛")
 
 @zuoye.handle()
 async def SendCodeforces(bot: Bot, event: Event, state: dict):
-    strr = a + "[10] 「唔 nana已经为你准备好比赛信息了」\n"
+    updataTime = []
+
+    with open(os.getcwd() + "/src/plugins/ContestsSpider/contestInforms.txt", encoding='utf-8') as f_obj:
+        data = f_obj.read()
+    f_obj.close()
+
+    if len(data) == 0:
+        GetContests()
+        with open(os.getcwd() + "/src/plugins/ContestsSpider/contestInforms.txt", encoding='utf-8') as f_obj:
+            data = f_obj.read()
+        f_obj.close()
+
+    now = time.localtime()
+    updataTime.append(str(now.tm_year) + "/" + str(now.tm_mon) + "/" + str(now.tm_mday))
+    strr = "[10] 「唔 nana已经为你准备好比赛信息了」\n"
+    strr += str(os.getcwd()) + "/ContestsSpider/contestInforms.txt"
     await bot.send(
         event=event,
-        message=strr + contestInfo[0] + "\n[ 该数据更新于 " + updataTime[0] + " ]"
+        message=strr + "[ 比赛数据更新于 " + updataTime[0] + " ]" + '\n' + data
+    )
+
+
+pattern = '比赛链接&#91;(.*?)\&#93;'
+
+query = on_regex(pattern, flags=0, rule=None)
+
+
+@query.handle()
+async def queryInfo(bot: Bot, event: Event, state: dict):
+    urlId = int(state['_matched_groups'][0])
+
+    await bot.send(
+        event=event,
+        message=contestUrl[urlId]
     )

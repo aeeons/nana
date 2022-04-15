@@ -12,7 +12,7 @@ from nonebot.adapters.cqhttp import Bot, Event, Message
 scheduler = require('nonebot_plugin_apscheduler').scheduler
 
 
-@scheduler.scheduled_job('cron', hour='19', minute='10', id='yincha')
+@scheduler.scheduled_job('cron', hour='01', minute='10', id='yincha')
 async def yincha():
     (bot,) = nonebot.get_bots().values()
     await bot.send_msg(

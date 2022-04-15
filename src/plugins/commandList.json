@@ -7,6 +7,18 @@
     "introduce": "发送「作业」,nana会找到你还没完成的作业",
     "trigger": "发送「作业」"
   },
+  "3": {
+    "introduce": "发送「查分」+「id」,nana会帮你查询分数噢",
+    "trigger": "发送「查分」+「id」"
+  },
+  "4": {
+    "introduce": "「喂喂喂,你在想什么呢」",
+    "trigger": "发送「注入」"
+  },
+  "5": {
+    "introduce": "「查询jmu集训队分数」",
+    "trigger": "发送「集训队查分」"
+  },
   "10": {
     "introduce": "发送「比赛信息」,nana会为你准备好最近的比赛噢",
     "trigger": "发送「比赛信息」"
